@@ -4,11 +4,14 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.advancedtopics.app.algorithm.Algorithm;
 import com.advancedtopics.app.algorithm.GeneticAlgorithm;
-import com.advancedtopics.app.algorithm.HillClimbingAlgorithm;
+import com.advancedtopics.app.algorithm.HillClimberAlgorithm;
+import com.advancedtopics.app.algorithm.RandomSearch;
 import com.advancedtopics.app.individual.Individual;
 import com.advancedtopics.app.individual.TestCase;
 import com.advancedtopics.app.individual.UniTest;
@@ -34,48 +37,134 @@ public class Main {
 
 		long startingTime = System.currentTimeMillis();
 
+		GeneticAlgorithm ga = new GeneticAlgorithm(tests, false);
+		HillClimberAlgorithm hc = new HillClimberAlgorithm(tests, false);
+		RandomSearch rs = new RandomSearch(tests);
+
 		Individual bestGAInd = null;
 		Individual bestHCInd = null;
+		Individual bestRSInd = null;
 
-		GeneticAlgorithm ga = new GeneticAlgorithm(tests);
-		HillClimbingAlgorithm hc = new HillClimbingAlgorithm(tests);
+		Map<String, List<Individual>> testResults = new HashMap<String, List<Individual>>();
+		testResults.put("ga", new ArrayList<Individual>());
+		testResults.put("hc", new ArrayList<Individual>());
+		testResults.put("rs", new ArrayList<Individual>());
 
-		int hcWins = 0, gaWins = 0, ties = 0;
-		int highestGAFitness = 0, highestHCFitness = 0;
-		for (int x = 0; x < ITERATIONS; x++) {
-			// Run each of the algorithms and find the individual with the highest fitness
-			Individual gaIndividual = ga.runAlgorithm();
-			Individual hcIndividual = hc.runAlgorithm();
+		List<Map<String, Integer>> testWins = new ArrayList<Map<String, Integer>>();
 
-			// Determine if the GA of HC algorithm had the highest fitness for this round
-			int gaFitness = Algorithm.getFitness(gaIndividual);
-			int hcFitness = Algorithm.getFitness(hcIndividual);
-			if (gaFitness > hcFitness)
-				gaWins++;
-			if (hcFitness > gaFitness)
-				hcWins++;
-			if (hcFitness == gaFitness)
-				ties++;
+		for (int i = 0; i < 10; i++) {
+			int hcWins = 0, gaWins = 0, rsWins = 0, ties = 0;
+			int highestGAFitness = 0, highestHCFitness = 0, highestRSFitness = 0;
+			for (int x = 0; x < ITERATIONS; x++) {
+				// Run each of the algorithms and find the individual with the highest fitness
+				Individual gaIndividual = ga.runAlgorithm();
+				Individual hcIndividual = hc.runAlgorithm();
+				Individual rsIndividual = rs.runAlgorithm();
 
-			// Find the overall highest individual for each algorithm
-			if (gaFitness > highestGAFitness)
-				bestGAInd = gaIndividual;
-			if (hcFitness > highestHCFitness)
-				bestHCInd = hcIndividual;
+				// Determine if the GA or HC algorithm or the random search had the highest fitness for this round
+				int gaFitness = Algorithm.getFitness(gaIndividual);
+				int hcFitness = Algorithm.getFitness(hcIndividual);
+				int rsFitness = Algorithm.getFitness(rsIndividual);
+				if (hcFitness == gaFitness && hcFitness == rsFitness && gaFitness == rsFitness)
+					ties++;
+				else if (gaFitness > hcFitness) {
+					if (gaFitness > rsFitness) {
+						gaWins++;
+						testResults.get("ga").add(gaIndividual);
+					} else {
+						rsWins++;
+						testResults.get("rs").add(rsIndividual);
+					}
+				} else if (hcFitness > gaFitness) {
+					if (hcFitness > rsFitness) {
+						hcWins++;
+						testResults.get("hc").add(hcIndividual);
+					} else {
+						rsWins++;
+						testResults.get("rs").add(rsIndividual);
+					}
+				} else if (rsFitness > gaFitness) {
+					if (rsFitness > hcFitness) {
+						rsWins++;
+						testResults.get("rs").add(rsIndividual);
+					} else {
+						hcWins++;
+						testResults.get("hc").add(hcIndividual);
+					}
+				} else if (rsFitness > hcFitness) {
+					if (rsFitness > gaFitness) {
+						rsWins++;
+						testResults.get("rs").add(rsIndividual);
+					} else {
+						gaWins++;
+						testResults.get("ga").add(gaIndividual);
+					}
+				} else if (gaFitness == hcFitness) {
+					ties++;
+				}
+
+				// Find the overall highest individual for each algorithm
+				if (gaFitness > highestGAFitness) {
+					bestGAInd = gaIndividual;
+				}
+				if (hcFitness > highestHCFitness) {
+					bestHCInd = hcIndividual;
+				}
+				if (rsFitness > highestRSFitness) {
+					bestRSInd = rsIndividual;
+				}
+			}
+
+			long finishingTime = System.currentTimeMillis();
+			long testTime = (finishingTime - startingTime);
+
+			System.out.println("FINISHED - Time to complete " + ITERATIONS + " iterations was: " + testTime + " ms");
+			System.out.print("\n");
+			System.out.println("Number of times Genetic Algorithm was better: " + gaWins);
+			System.out.println("Number of times Hill Climbing Algorithm was better: " + hcWins);
+			System.out.println("Number of times random search was better: " + rsWins);
+			System.out.println("Number of times both algorithms had same fitness: " + ties);
+			System.out.println();
+			System.out.println("***** Best from Genetic Algorithm *****");
+			Algorithm.printOut(bestGAInd);
+			System.out.println("***** Best from Hill Climbing Algorithm *****");
+			Algorithm.printOut(bestHCInd);
+			System.out.println("***** Best from Random Search *****");
+			Algorithm.printOut(bestRSInd);
+
+			// Store the wins
+			Map<String, Integer> wins = new HashMap<String, Integer>();
+			wins.put("gaWins", gaWins);
+			wins.put("hcWins", hcWins);
+			wins.put("rsWins", rsWins);
+			wins.put("ties", ties);
+			testWins.add(wins);
 		}
 
-		long finishingTime = System.currentTimeMillis();
-		long testTime = (finishingTime - startingTime);
-		System.out.print("\n\n");
-		System.out.println("FINISHED - Time to complete was: " + testTime + " ms");
-		System.out.print("\n");
-		System.out.println("Number of times Genetic Algorithm was better: " + gaWins);
-		System.out.println("Number of times Hill Climbing Algorithm was better: " + hcWins);
-		System.out.println("Number of times both algorithms had same fitness: " + ties);
-		System.out.println("***** Best from Genetic Algorithm *****");
-		ga.printOutIndividual(bestGAInd);
-		System.out.println("***** Best from Hill Climbing Algorithm *****");
-		ga.printOutIndividual(bestHCInd);
+		System.out.println("***** Genetic Algorithm [" + testResults.get("ga").size() + "] *****");
+		for (Individual i : testResults.get("ga")) {
+			System.out.println(i.toString() + ": " + Algorithm.getFitness(i));
+		}
+		System.out.println("\n***** Hill Climber [" + testResults.get("hc").size() + "] *****");
+		for (Individual i : testResults.get("hc")) {
+			System.out.println(i.toString() + ": " + Algorithm.getFitness(i));
+		}
+		System.out.println("\n***** Random Search [" + testResults.get("rs").size() + "] *****");
+		for (Individual i : testResults.get("rs")) {
+			System.out.println(i.toString() + ": " + Algorithm.getFitness(i));
+		}
+
+		for (Map<String, Integer> wins : testWins) {
+			Integer gaWins = wins.get("gaWins");
+			Integer hcWins = wins.get("hcWins");
+			Integer rsWins = wins.get("rsWins");
+			Integer ties = wins.get("ties");
+			System.out.println("\nGenetic Algorithm Wins: " + gaWins);
+			System.out.println("Hill Climber Wins: " + hcWins);
+			System.out.println("Random Search Wins: " + rsWins);
+			System.out.println("Ties: " + ties);
+		}
+
 	}
 
 	/**

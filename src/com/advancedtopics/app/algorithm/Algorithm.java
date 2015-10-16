@@ -18,8 +18,15 @@ public abstract class Algorithm {
 	protected static Random random;
 	protected static int id;
 
+	protected boolean print;
+
 	public Algorithm(List<UniTest> tests) {
+		this(tests, true);
+	}
+
+	public Algorithm(List<UniTest> tests, boolean print) {
 		this.tests = tests;
+		this.print = print;
 		random = new Random();
 	}
 
@@ -38,8 +45,6 @@ public abstract class Algorithm {
 	 * @return The best individual from the algorithm's result.
 	 */
 	protected abstract Individual algorithm();
-
-	protected abstract void printOut(Individual individual);
 
 	/**
 	 * Determine the fitness for an individual. If a fault is found in the first UniTest, then it will receive the
@@ -95,8 +100,10 @@ public abstract class Algorithm {
 			mutatedInd.replaceTest(offset1, t2);
 			mutatedInd.replaceTest(offset2, t1);
 
-			System.out.println("Mutating " + mutatedInd.toString());
-			printOut(mutatedInd);
+			if (print) {
+				System.out.println("Mutating " + mutatedInd.toString());
+				printOut(mutatedInd);
+			}
 		}
 	}
 
@@ -128,5 +135,43 @@ public abstract class Algorithm {
 	 */
 	protected int getRandomOffset() {
 		return random.nextInt(4);
+	}
+
+	public static void printOut(Individual individual) {
+		int spaceSize = 14;
+		StringBuilder builder = new StringBuilder();
+
+		builder.append("--- " + individual.toString() + " ---\n");
+
+		List<TestCase> testCases = individual.getPopulation().get(0).getTestCases();
+		for (int x = 0; x < spaceSize; x++)
+			builder.append(" ");
+		for (TestCase testCase : testCases) {
+			builder.append(testCase.getName() + " ");
+			for (int x = 0; x < 4; x++) {
+				if (x > testCase.getName().length()) {
+					builder.append(" ");
+				}
+			}
+		}
+		builder.append("\n");
+		for (UniTest test : individual.getPopulation()) {
+			builder.append(test.getName());
+			for (int x = 0; x <= spaceSize; x++) {
+				if (x > test.getName().length()) {
+					if (x < spaceSize)
+						builder.append(" ");
+					else
+						builder.append("|");
+				}
+			}
+			for (TestCase testCase : test.getTestCases()) {
+				builder.append(testCase.isFaulty() ? " X  " : " O  ");
+			}
+			builder.append("\n");
+		}
+		int fitness = getFitness(individual);
+		builder.append("Fitness for individual was: " + fitness + "\n");
+		System.out.println(builder.toString());
 	}
 }

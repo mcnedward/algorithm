@@ -10,12 +10,16 @@ import com.advancedtopics.app.individual.UniTest;
  * @author Edward McNealy <edwardmcn64@gmail.com> - Oct 13, 2015
  *
  */
-public class HillClimbingAlgorithm extends Algorithm {
+public class HillClimberAlgorithm extends Algorithm {
 
 	List<Individual> population;
 
-	public HillClimbingAlgorithm(List<UniTest> tests) {
+	public HillClimberAlgorithm(List<UniTest> tests) {
 		super(tests);
+	}
+
+	public HillClimberAlgorithm(List<UniTest> tests, boolean print) {
+		super(tests, print);
 	}
 
 	@Override
@@ -39,12 +43,13 @@ public class HillClimbingAlgorithm extends Algorithm {
 			population.add(i);
 		}
 		for (Individual i : population)
-			printOut(i);
+			printOutIndividual(i);
 
 		int rand = random.nextInt(population.size());
 
 		Individual starting = population.get(rand);
-		System.out.println("\nFirst test is " + starting.toString() + " found at position: " + (rand + 1) + "\n");
+		if (print)
+			System.out.println("\nFirst test is " + starting.toString() + " found at position: " + (rand + 1) + "\n");
 
 		int highestFitness = 0;
 		int index = 0;
@@ -55,7 +60,7 @@ public class HillClimbingAlgorithm extends Algorithm {
 				switchSides = true;
 				break;
 			}
-			printOut(population.get(x));
+			printOutIndividual(population.get(x));
 			int fitness = getFitness(population.get(x));
 			if (fitness > highestFitness) {
 				highestFitness = fitness;
@@ -67,9 +72,10 @@ public class HillClimbingAlgorithm extends Algorithm {
 		}
 
 		if (switchSides) {
-			System.out.println("Switching sides");
+			if (print)
+				System.out.println("Switching sides");
 			for (int x = rand - 1; x >= 0; x--) {
-				printOut(population.get(x));
+				printOutIndividual(population.get(x));
 
 				int fitness = getFitness(population.get(x));
 				if (fitness > highestFitness) {
@@ -80,15 +86,17 @@ public class HillClimbingAlgorithm extends Algorithm {
 				}
 			}
 		}
-		System.out.println("\nFound the best.");
-		printOut(population.get(index));
+		if (print)
+			System.out.println("\nFound the best.");
+		printOutIndividual(population.get(index));
 
 		return population.get(index);
 	}
 
-	@Override
-	protected void printOut(Individual individual) {
-		int fitness = getFitness(individual);
-		System.out.println(individual.toString() + " [" + (population.indexOf(individual) + 1) + "/" + population.size() + "]: " + fitness);
+	private void printOutIndividual(Individual individual) {
+		if (print) {
+			int fitness = getFitness(individual);
+			System.out.println(individual.toString() + " [" + (population.indexOf(individual) + 1) + "/" + population.size() + "]: " + fitness);
+		}
 	}
 }

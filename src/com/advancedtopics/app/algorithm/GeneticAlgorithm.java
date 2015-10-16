@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.advancedtopics.app.individual.Individual;
-import com.advancedtopics.app.individual.TestCase;
 import com.advancedtopics.app.individual.UniTest;
 
 /**
@@ -21,6 +20,10 @@ public class GeneticAlgorithm extends Algorithm {
 
 	public GeneticAlgorithm(List<UniTest> tests) {
 		super(tests);
+	}
+
+	public GeneticAlgorithm(List<UniTest> tests, boolean print) {
+		super(tests, print);
 	}
 
 	@Override
@@ -55,9 +58,10 @@ public class GeneticAlgorithm extends Algorithm {
 			population.add(child_1);
 			population.add(child_2);
 
-			System.out.println("********** New Population **********");
+			if (print)
+				System.out.println("********** New Population **********");
 			for (Individual i : population) {
-				printOut(i);
+				printOutIndividual(i);
 			}
 
 			// Mutation
@@ -66,9 +70,10 @@ public class GeneticAlgorithm extends Algorithm {
 			Individual bestIndividual_1 = findBest(population);
 			Individual bestIndividual_2 = findBest(population);
 
-			System.out.println("Found best 2 individuals: " + bestIndividual_1.toString() + " and " + bestIndividual_2.toString());
-			printOut(bestIndividual_1);
-			printOut(bestIndividual_2);
+			if (print)
+				System.out.println("Found best 2 individuals: " + bestIndividual_1.toString() + " and " + bestIndividual_2.toString());
+			printOutIndividual(bestIndividual_1);
+			printOutIndividual(bestIndividual_2);
 
 			population.clear();
 			parent_1 = bestIndividual_1;
@@ -82,8 +87,9 @@ public class GeneticAlgorithm extends Algorithm {
 			overallBest = parent_1;
 		else
 			overallBest = parent_2;
-		System.out.println("***** Found the overall best individual - " + overallBest.getId() + "/" + id + " *****");
-		printOut(overallBest);
+		if (print)
+			System.out.println("***** Found the overall best individual - " + overallBest.getId() + "/" + id + " *****");
+		printOutIndividual(overallBest);
 
 		return overallBest;
 	}
@@ -147,52 +153,9 @@ public class GeneticAlgorithm extends Algorithm {
 		return result;
 	}
 
-	/**
-	 * Prints out the individual with each of the faults for every UniTest marked with an "X".
-	 * 
-	 * @param individual
-	 *            The individual to print.
-	 */
-	public void printOutIndividual(Individual individual) {
-		new GeneticAlgorithm().printOut(individual);
-	}
-
-	@Override
-	protected void printOut(Individual individual) {
-		int spaceSize = 14;
-		StringBuilder builder = new StringBuilder();
-
-		builder.append("--- " + individual.toString() + " ---\n");
-
-		List<TestCase> testCases = individual.getPopulation().get(0).getTestCases();
-		for (int x = 0; x < spaceSize; x++)
-			builder.append(" ");
-		for (TestCase testCase : testCases) {
-			builder.append(testCase.getName() + " ");
-			for (int x = 0; x < 4; x++) {
-				if (x > testCase.getName().length()) {
-					builder.append(" ");
-				}
-			}
+	private void printOutIndividual(Individual individual) {
+		if (print) {
+			printOut(individual);
 		}
-		builder.append("\n");
-		for (UniTest test : individual.getPopulation()) {
-			builder.append(test.getName());
-			for (int x = 0; x <= spaceSize; x++) {
-				if (x > test.getName().length()) {
-					if (x < spaceSize)
-						builder.append(" ");
-					else
-						builder.append("|");
-				}
-			}
-			for (TestCase testCase : test.getTestCases()) {
-				builder.append(testCase.isFaulty() ? " X  " : " O  ");
-			}
-			builder.append("\n");
-		}
-		int fitness = getFitness(individual);
-		builder.append("Fitness for individual was: " + fitness + "\n");
-		System.out.println(builder.toString());
 	}
 }
